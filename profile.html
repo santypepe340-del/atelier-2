@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier: artist profile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500&display=swap">
+<style>
+:root{--paper:#F6F5F1;--ink:#26241F;--soft:#7C786F;--line:#E3E0D8;--accent:#2F3FBF;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1E1D1A;--ink:#EDEBE4;--soft:#9A968B;--line:#33312C;--accent:#8C98FF}}
+:root[data-theme="dark"]{--paper:#1E1D1A;--ink:#EDEBE4;--soft:#9A968B;--line:#33312C;--accent:#8C98FF}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.5 Figtree,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.mark{font:400 28px/1 "Instrument Serif",Georgia,serif}
+.back{color:var(--soft);text-decoration:none}.back:hover{color:var(--ink)}
+.intro{display:grid;gap:28px;padding:clamp(28px,6vw,64px) 0 40px}
+@media(min-width:820px){.intro{grid-template-columns:1.4fr 1fr;align-items:end}}
+.role{color:var(--soft);margin:0 0 10px}
+h1{font:400 clamp(48px,10vw,110px)/.95 "Instrument Serif",Georgia,serif;letter-spacing:-.03em;margin:0}
+.bio{max-width:30em;margin:0 0 20px}
+.meta{color:var(--soft);margin:0 0 22px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;border-radius:99px;padding:9px 22px;cursor:pointer}
+.follow{background:var(--ink);color:var(--paper);border:1px solid var(--ink)}
+.follow.on{background:none;color:var(--ink)}
+.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.ghost:hover{border-color:var(--ink)}
+:is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.tabs button{background:none;border:0;border-radius:0;padding:12px 0;color:var(--soft);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-color:var(--ink)}
+.wall{columns:2;column-gap:14px}
+@media(min-width:720px){.wall{columns:3;column-gap:20px}}
+figure{margin:0 0 20px;break-inside:avoid}
+.art{border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -18px rgba(0,0,0,.35);transition:transform .35s ease}
+figure:hover .art{transform:translateY(-3px)}
+figcaption{padding-top:8px;font:400 17px/1.2 "Instrument Serif",Georgia,serif}
+figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)}
+.support{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:20px;padding:30px 0 60px}
+.support p{margin:0;max-width:30em}
+.support b{font:400 26px/1.15 "Instrument Serif",Georgia,serif;display:block;margin-bottom:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="mark">Atelier</div><a class="back" href="#">Back to discover</a></header>
+
+<section class="intro">
+<div>
+<p class="role">Illustrator and animator</p>
+<h1>Ada Nwosu</h1>
+</div>
+<div>
+<p class="bio">Ink drawings and soft-colour animation about markets, rain, and the hour before sunrise.</p>
+<p class="meta">Lagos. Sharing since 2026. 14 works.</p>
+<div class="row">
+<button class="follow" id="follow">Follow</button>
+<button class="ghost" id="tip">Send a tip</button>
+</div>
+</div>
+</section>
+
+<div class="tabs" id="tabs"><button class="on" data-t="work">Work</button><button data-t="col">Collections</button></div>
+<main class="wall" id="wall"></main>
+
+<section class="support">
+<p><b>Support Ada's studio</b>Your support goes straight to the artist and helps new work get made.</p>
+<div class="row"><button class="ghost">Tip once</button><button class="follow">Support monthly</button></div>
+</section>
+</div>
+
+<script>
+const W=[
+["Low tide, 6 a.m.",1.25,"#8FB4D9","#E9D9B8","#35567A"],
+["Marigold study",.8,"#F2B84B","#D9742B","#F6E3B4"],
+["Night market",1.1,"#6A4C9C","#E07A8F","#241B3A"],
+["Paper boats",1.4,"#B9CDE8","#F4EFE3","#6F8FBF"],
+["Harmattan light",.75,"#F0C98A","#C9825A","#F8EBD3"],
+["Deep water",.85,"#2D4F8A","#79A6D6","#0F1E3A"],
+["Ember",.95,"#E2563B","#F3A27D","#5A1D1D"],
+["Quiet fern",1.5,"#9DB88A","#2F5A45","#DDE6C9"],
+["Soft machine",1.2,"#B8A6DC","#7D6BB0","#EFEAF8"]
+];
+const C=[["Rain studies",5],["Market sketches",8],["Animation stills",4]];
+const wall=document.getElementById("wall");
+function art(a){return `<figure><div class="art" style="aspect-ratio:1/${a[1]};background:radial-gradient(circle at 28% 24%,${a[2]},transparent 58%),radial-gradient(circle at 76% 72%,${a[3]},transparent 62%),${a[4]}"></div><figcaption>${a[0]}</figcaption></figure>`}
+function show(t){wall.innerHTML=t==="work"?W.map(art).join(""):C.map((c,i)=>{const a=W[(i*3)%W.length];return art([c[0]+"<span>"+c[1]+" works</span>",1.1,a[2],a[3],a[4]])}).join("")}
+document.getElementById("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));show(b.dataset.t)};
+const f=document.getElementById("follow");
+f.onclick=()=>{const on=f.classList.toggle("on");f.textContent=on?"Following":"Follow"};
+show("work");
+</script>
+</body>
+</html>
