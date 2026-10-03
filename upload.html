@@ -40,6 +40,8 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 <body>
 <div class="wrap">
 <div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script src="site.js"></script>
 <h1>Share your work</h1>
 
@@ -78,12 +80,12 @@ const M=["Ink","Digital","Watercolour","Oil","3D","Animation","Photography","Mix
 const SW={red:"#D2503A",ochre:"#E3A93C",green:"#5E8C61",blue:"#4A74B4",violet:"#8068B8",ink:"#2B2925"};
 $("chips").innerHTML=M.map(m=>`<button type="button" class="chip">${m}</button>`).join("");
 $("chips").onclick=e=>{const b=e.target.closest(".chip");if(b)b.classList.toggle("on")};
-let has=false;
+let has=false,file=null;
 function ready(){$("pub").disabled=!(has&&$("title").value.trim())}
 $("title").oninput=ready;
 function load(f){
 if(!f||!f.type.startsWith("image/"))return;
-const r=new FileReader();
+file=f;const r=new FileReader();
 r.onload=()=>{const im=$("img");im.onload=()=>{colours(im)};im.src=r.result;$("drop").style.display="none";$("frame").style.display="block";has=true;ready()};
 r.readAsDataURL(f)}
 $("file").onchange=e=>load(e.target.files[0]);
@@ -103,10 +105,24 @@ if(l<.2)k="ink";else if(s<.12)continue;else{
 let h=mx===r?((g-b)/s)%6:mx===g?(b-r)/s+2:(r-g)/s+4;h=(h*60+360)%360;
 k=h<20||h>=340?"red":h<70?"ochre":h<170?"green":h<260?"blue":"violet"}
 n[k]=(n[k]||0)+1}
-const top=Object.entries(n).sort((a,b)=>b[1]-a[1]).slice(0,3).map(a=>a[0]);
+const top=Object.entries(n).sort((a,b)=>b[1]-a[1]).slice(0,3).map(a=>a[0]);window.found=top;
 $("dots").innerHTML=top.length?top.map(k=>`<i style="background:${SW[k]}" title="${k}"></i>`).join("")+`<span>${top.join(", ")}</span>`:"No strong colours found.";
 }catch(e){$("dots").textContent="Colours will be added when you publish."}}
-$("pub").onclick=()=>{$("form").style.display="none";$("done").style.display="block"};
+$("pub").onclick=async()=>{
+if(!me){location.href="auth.html";return}
+$("pub").disabled=true;$("pub").textContent="Publishing...";
+try{
+const ext=((file.name.split(".").pop()||"jpg")+"").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+const path=me.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"."+ext;
+let r=await sb.storage.from("artworks").upload(path,file,{contentType:file.type});
+if(r.error)throw r.error;
+const mediums=[...document.querySelectorAll(".chip.on")].map(c=>c.textContent);
+r=await sb.from("artworks").insert({artist_id:me.id,title:$("title").value.trim(),note:$("note").value.trim()||null,mediums:mediums,colours:window.found||[],image_path:path});
+if(r.error)throw r.error;
+$("form").style.display="none";$("done").style.display="block";$("pub").textContent="Publish";
+}catch(e){alert("Could not publish: "+(e.message||e));$("pub").disabled=false;$("pub").textContent="Publish"}
+};
+ready.then(()=>{if(!me)location.href="auth.html"});
 $("again").onclick=()=>{$("done").style.display="none";$("form").style.display="block";$("form").reset();document.querySelectorAll(".chip.on").forEach(c=>c.classList.remove("on"));$("frame").style.display="none";$("drop").style.display="grid";$("dots").textContent="Add an image to see them.";has=false;ready()};
 </script>
 </body>
