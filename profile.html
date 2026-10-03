@@ -3,38 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Atelier: artist profile</title>
+<title>Atelier: edit profile</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500&display=swap">
 <link rel="stylesheet" href="styles.css">
 <style>
-.back{color:var(--soft);text-decoration:none}.back:hover{color:var(--ink)}
-.intro{display:grid;gap:28px;padding:clamp(28px,6vw,64px) 0 40px}
-@media(min-width:820px){.intro{grid-template-columns:1.4fr 1fr;align-items:end}}
-.role{color:var(--soft);margin:0 0 10px}
-h1{font:400 clamp(48px,10vw,110px)/.95 "Instrument Serif",Georgia,serif;letter-spacing:-.03em;margin:0}
-.bio{max-width:30em;margin:0 0 20px}
-.meta{color:var(--soft);margin:0 0 22px}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-button{font:inherit;border-radius:99px;padding:9px 22px;cursor:pointer}
-.follow{background:var(--ink);color:var(--paper);border:1px solid var(--ink)}
-.follow.on{background:none;color:var(--ink)}
-.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.box{max-width:480px;padding:clamp(24px,6vw,64px) 0 80px}
+h1{font:400 clamp(40px,8vw,64px)/1 "Instrument Serif",Georgia,serif;letter-spacing:-.025em;margin:0 0 32px}
+label{display:block;color:var(--soft);font-size:13px;margin:0 0 6px}
+input[type=text],input[type=url],textarea{width:100%;font:inherit;font-size:18px;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0 10px;margin-bottom:26px;border-radius:0}
+textarea{resize:vertical;min-height:90px;margin-bottom:6px}
+input:focus,textarea:focus{outline:0;border-color:var(--ink)}
+.cnt{color:var(--soft);font-size:13px;text-align:right;margin-bottom:26px}
+.photo{display:flex;align-items:center;gap:18px;margin-bottom:30px}
+.photo .avatar{width:88px;height:88px;margin:0}
+.ghost{background:none;color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:8px 20px;font:inherit;cursor:pointer}
 .ghost:hover{border-color:var(--ink)}
-:is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:28px}
-.tabs button{background:none;border:0;border-radius:0;padding:12px 0;color:var(--soft);border-bottom:2px solid transparent;margin-bottom:-1px}
-.tabs button.on{color:var(--ink);border-color:var(--ink)}
-.wall{columns:2;column-gap:14px}
-@media(min-width:720px){.wall{columns:3;column-gap:20px}}
-figure{margin:0 0 20px;break-inside:avoid}
-.art{border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -18px rgba(0,0,0,.35);transition:transform .35s ease}
-figure:hover .art{transform:translateY(-3px)}
-figcaption{padding-top:8px;font:400 17px/1.2 "Instrument Serif",Georgia,serif}
-figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)}
-.support{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:20px;padding:30px 0 60px}
-.support p{margin:0;max-width:30em}
-.support b{font:400 26px/1.15 "Instrument Serif",Georgia,serif;display:block;margin-bottom:4px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.msg{min-height:24px;color:var(--accent);margin:0 0 14px}
+.pub{background:var(--ink);color:var(--paper);border:0;border-radius:99px;padding:12px 30px;font:inherit;cursor:pointer}
+.pub:disabled{opacity:.4}
+.hint{color:var(--soft);font-size:13px;margin:-16px 0 26px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.chip{border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:6px 14px;font:inherit;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cancel{margin-left:16px;color:var(--soft);text-decoration:none}
 </style>
 </head>
 <body>
@@ -43,78 +34,62 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="site.js"></script>
-
-<section class="intro">
-<div>
-<img class="avatar" id="av" alt="" hidden>
-<p class="role">Illustrator and animator</p>
-<h1>Ada Nwosu</h1>
+<main class="box">
+<h1>Edit profile</h1>
+<form id="f">
+<div class="photo">
+<img class="avatar" id="pv" alt="Your photo" hidden>
+<div><button type="button" class="ghost" id="pick">Choose photo</button></div>
+<input id="file" type="file" accept="image/*" hidden>
 </div>
-<div>
-<p class="bio">Ink drawings and soft-colour animation about markets, rain, and the hour before sunrise.</p>
-<p class="meta">Lagos. Sharing since 2026. 14 works.</p>
-<div class="row">
-<button class="follow" id="follow">Add friend</button>
-<button class="ghost" id="tip">Send a tip</button>
+<label for="name">Name shown on your work</label>
+<input id="name" type="text" maxlength="60" required autocomplete="name">
+<label for="bio">About you</label>
+<textarea id="bio" maxlength="300" placeholder="What do you make? A line or two is plenty."></textarea>
+<div class="cnt" id="cnt">0/300</div>
+<div class="lab" style="color:var(--soft);font-size:13px;margin-bottom:6px">What do you want to see more of?</div>
+<div class="chips" id="chips"></div>
+<p class="hint">Only used for your For you tab. Change it anytime.</p>
+<label for="support">Support link (optional)</label>
+<input id="support" type="url" maxlength="300" placeholder="https://" autocomplete="url">
+<p class="hint">Where fans can send tips: a Paystack page, PayPal, Ko-fi, Buy Me a Coffee. Atelier does not handle payments.</p>
+<p id="msg" class="msg" role="status"></p>
+<button class="pub" id="go">Save</button><a class="cancel" href="profile.html">Cancel</a>
+</form>
+</main>
 </div>
-</div>
-</section>
-
-<section id="friends" style="display:none"></section>
-<main class="wall" id="wall"></main>
-
-<section class="support">
-<p><b>Support Ada's studio</b>Your support goes straight to the artist and helps new work get made.</p>
-<div class="row"><button class="follow" id="supportBtn">Support</button></div>
-</section>
-</div>
-
 <script>
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);let file=null,old=null;
+const M=["Ink","Digital","Watercolour","Oil","3D","Animation","Photography","Mixed"];
+$("chips").innerHTML=M.map(m=>`<button type="button" class="chip">${m}</button>`).join("");
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(b)b.classList.toggle("on")};
+function count(){$("cnt").textContent=$("bio").value.length+"/300"}
 ready.then(async()=>{
-const id=new URLSearchParams(location.search).get("id")||(me&&me.id);
-if(!id){location.href="auth.html";return}
-const pr=await sb.from("profiles").select("*").eq("id",id).maybeSingle();
-if(!pr.data){document.querySelector("h1").textContent="Artist not found";return}
-const p=pr.data;
-document.title=p.display_name+" on Atelier";
-if(p.avatar_path){$("av").src=imgUrl(p.avatar_path);$("av").hidden=false}
-document.querySelector(".role").textContent="Artist on Atelier";
-document.querySelector("h1").textContent=p.display_name||"Artist";
-document.querySelector(".bio").textContent=p.bio||"";
-const ar=await sb.from("artworks").select("id,title,image_path").eq("artist_id",id).order("created_at",{ascending:false});
-const W=ar.data||[];
-document.querySelector(".meta").textContent=W.length+(W.length===1?" work. ":" works. ")+"Joined "+new Date(p.created_at).getFullYear()+".";
-document.querySelector(".support b").textContent="Support "+(p.display_name||"this artist")+"'s studio";
-$("wall").innerHTML=W.length?W.map(a=>`<figure><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption>${esc(a.title)}</figcaption></figure>`).join(""):'<p class="empty">No work shared yet.</p>';
-async function showFriends(){
-const r=await sb.from("follows").select("follower_id,profiles!follows_follower_id_fkey(display_name,avatar_path)",{count:"exact"}).eq("artist_id",id).order("created_at",{ascending:false}).limit(12);
-const box=$("friends"),n=r.count||0;
-if(!n){box.style.display="none";return}
-box.style.display="block";
-box.innerHTML='<div class="flab">'+n+(n===1?" friend":" friends")+'</div><div class="frow">'+(r.data||[]).map(function(x){var q=x.profiles||{},nm=q.display_name||"Artist";return '<a class="fr" href="profile.html?id='+x.follower_id+'">'+(q.avatar_path?'<img src="'+imgUrl(q.avatar_path)+'" alt="">':'<span class="ini">'+esc(nm.charAt(0).toUpperCase())+'</span>')+'<span>'+esc(nm)+'</span></a>'}).join("")+'</div>';
-}
-showFriends();
-const own=!!(me&&me.id===id);
-const ok=!!p.support_url&&/^https:\/\//i.test(p.support_url);
-const openSupport=()=>window.open(p.support_url,"_blank","noopener,noreferrer");
-$("supportBtn").onclick=openSupport;
-if(!own){if(ok){$("tip").textContent="Support";$("tip").onclick=openSupport}else{$("tip").style.display="none"}}
-if(!ok){
-if(own){document.querySelector(".support p").innerHTML="<b>Add a support link</b>Add a link in Edit profile so fans can support your work.";$("supportBtn").textContent="Edit profile";$("supportBtn").onclick=()=>{location.href="edit-profile.html"}}
-else{document.querySelector(".support").style.display="none"}
-}
-const f=$("follow");
-if(me&&me.id===id){f.style.display="none";$("tip").textContent="Edit profile";$("tip").onclick=()=>{location.href="edit-profile.html"}}
-else{
-let on=false;
-if(me){const r=await sb.from("follows").select("artist_id").eq("follower_id",me.id).eq("artist_id",id);on=!!(r.data&&r.data.length)}
-const set=()=>{f.classList.toggle("on",on);f.textContent=on?"Friends":"Add friend"};set();
-f.onclick=async()=>{if(!me){location.href="auth.html";return}
-const r=on?await sb.from("follows").delete().eq("follower_id",me.id).eq("artist_id",id):await sb.from("follows").insert({follower_id:me.id,artist_id:id});
-if(!r.error){on=!on;set();showFriends()}};
-}
-});
+if(!me){location.href="auth.html";return}
+const r=await sb.from("profiles").select("display_name,bio,avatar_path,support_url,interests").eq("id",me.id).maybeSingle();
+const p=r.data||{};old=p.avatar_path||null;
+$("name").value=p.display_name||"";$("bio").value=p.bio||"";$("support").value=p.support_url||"";
+(p.interests||[]).forEach(i=>{document.querySelectorAll(".chip").forEach(c=>{if(c.textContent===i)c.classList.add("on")})});
+if(old){$("pv").src=imgUrl(old);$("pv").hidden=false}
+count()});
+$("bio").oninput=count;
+$("pick").onclick=()=>$("file").click();
+$("file").onchange=e=>{const f=e.target.files[0];if(!f||!f.type.startsWith("image/"))return;file=f;const r=new FileReader();r.onload=()=>{$("pv").src=r.result;$("pv").hidden=false};r.readAsDataURL(f)};
+$("f").onsubmit=async e=>{e.preventDefault();$("go").disabled=true;$("msg").textContent="";
+try{
+const su=$("support").value.trim();
+if(su&&!/^https:\/\//i.test(su))throw new Error("The support link must start with https://");
+let path=old;
+if(file){
+const ext=((file.name.split(".").pop()||"jpg")+"").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+path=me.id+"/avatar-"+Date.now()+"."+ext;
+const u=await sb.storage.from("artworks").upload(path,file,{contentType:file.type});
+if(u.error)throw u.error}
+const r=await sb.from("profiles").update({display_name:$("name").value.trim(),bio:$("bio").value.trim()||null,avatar_path:path,support_url:su||null,interests:[...document.querySelectorAll(".chip.on")].map(c=>c.textContent)}).eq("id",me.id);
+if(r.error)throw r.error;
+if(file&&old)sb.storage.from("artworks").remove([old]);
+location.href="profile.html";
+}catch(err){$("msg").textContent=err.message||String(err);$("go").disabled=false}};
 </script>
 </body>
 </html>
