@@ -46,6 +46,7 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 
 <section class="intro">
 <div>
+<img class="avatar" id="av" alt="" hidden>
 <p class="role">Illustrator and animator</p>
 <h1>Ada Nwosu</h1>
 </div>
@@ -76,6 +77,7 @@ const pr=await sb.from("profiles").select("*").eq("id",id).maybeSingle();
 if(!pr.data){document.querySelector("h1").textContent="Artist not found";return}
 const p=pr.data;
 document.title=p.display_name+" on Atelier";
+if(p.avatar_path){$("av").src=imgUrl(p.avatar_path);$("av").hidden=false}
 document.querySelector(".role").textContent="Artist on Atelier";
 document.querySelector("h1").textContent=p.display_name||"Artist";
 document.querySelector(".bio").textContent=p.bio||"";
@@ -85,7 +87,7 @@ document.querySelector(".meta").textContent=W.length+(W.length===1?" work. ":" w
 document.querySelector(".support b").textContent="Support "+(p.display_name||"this artist")+"'s studio";
 $("wall").innerHTML=W.length?W.map(a=>`<figure><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption>${esc(a.title)}</figcaption></figure>`).join(""):'<p class="empty">No work shared yet.</p>';
 const f=$("follow");
-if(me&&me.id===id){f.style.display="none";$("tip").style.display="none"}
+if(me&&me.id===id){f.style.display="none";$("tip").textContent="Edit profile";$("tip").onclick=()=>{location.href="edit-profile.html"}}
 else{
 let on=false;
 if(me){const r=await sb.from("follows").select("artist_id").eq("follower_id",me.id).eq("artist_id",id);on=!!(r.data&&r.data.length)}
