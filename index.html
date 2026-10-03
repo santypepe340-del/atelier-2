@@ -43,7 +43,7 @@ footer{padding:40px 0 60px;color:var(--soft);font-size:13px}
 <p class="sub">No ranking, no feed tricks. Look through the wall, follow who moves you, and keep what you love.</p>
 
 <div class="bar">
-<div class="modes" id="modes"><button class="on" data-m="new">Newest</button><button data-m="shuffle">Shuffle</button></div>
+<div class="modes" id="modes"><button class="on" data-m="new">Newest</button><button data-m="shuffle">Shuffle</button><button data-m="foryou" id="fy" style="display:none">For you</button></div>
 <div class="sw" id="sw"><span>Colour</span></div>
 </div>
 
@@ -53,17 +53,37 @@ footer{padding:40px 0 60px;color:var(--soft);font-size:13px}
 
 <script>
 const $=id=>document.getElementById(id);
-const wall=$("wall");let mode="new",hue=null,A=[];
+const wall=$("wall");let mode="new",hue=null,A=[],mine=[],fr=new Set();
 function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function rank(list){
+const cnt={};A.forEach(a=>{cnt[a.artist_id]=(cnt[a.artist_id]||0)+1});
+const now=Date.now();
+const sc=list.filter(a=>!me||a.artist_id!==me.id).map(a=>{
+const ov=(a.mediums||[]).filter(m=>mine.includes(m));
+let s=Math.min(ov.length,2)*2;
+const isF=fr.has(a.artist_id);if(isF)s+=2;
+s+=Math.exp(-((now-new Date(a.created_at))/864e5)/14);
+const isNew=cnt[a.artist_id]<=3;if(isNew)s+=1;
+s+=Math.random()*1.5;
+a._why=ov.length?"Because you like "+ov.join(", ").toLowerCase():isF?"From a friend":isNew?"New to Atelier":"A fresh pick";
+return [s,a]}).sort((x,y)=>y[0]-x[0]).map(x=>x[1]);
+const seen={},first=[],rest=[];
+sc.forEach(a=>{seen[a.artist_id]=(seen[a.artist_id]||0)+1;(seen[a.artist_id]<=2?first:rest).push(a)});
+return first.concat(rest)}
 function draw(){
-let l=A.filter(a=>!hue||(a.colours||[]).includes(hue));if(mode==="shuffle")l=shuf(l);
-wall.innerHTML=l.length?l.map(a=>`<figure tabindex="0"><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a></figcaption></figure>`).join(""):`<p class="empty">${A.length?"No work in this colour yet.":'Nothing here yet. <a href="upload.html">Share the first piece.</a>'}</p>`}
+let l=A.filter(a=>!hue||(a.colours||[]).includes(hue));if(mode!=="foryou")A.forEach(a=>{a._why=""});if(mode==="shuffle")l=shuf(l);if(mode==="foryou")l=rank(l);
+wall.innerHTML=l.length?l.map(a=>`<figure tabindex="0"><a href="${imgUrl(a.image_path)}" target="_blank" rel="noopener"><img class="art" loading="lazy" src="${imgUrl(a.thumb_path||a.image_path)}" alt="${esc(a.title)}"></a><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a>${a._why?`<span>${esc(a._why)}</span>`:""}</figcaption></figure>`).join(""):`<p class="empty">${A.length?"No work in this colour yet.":'Nothing here yet. <a href="upload.html">Share the first piece.</a>'}</p>`}
 $("modes").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));draw()};
 const sw=$("sw");
 [["red","#D2503A"],["ochre","#E3A93C"],["green","#5E8C61"],["blue","#4A74B4"],["violet","#8068B8"],["ink","#2B2925"]].forEach(([n,c])=>{const b=document.createElement("button");b.style.background=c;b.title=n;b.setAttribute("aria-label",n);b.onclick=()=>{hue=hue===n?null:n;[...sw.querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b&&hue));draw()};sw.appendChild(b)});
 ready.then(async()=>{
-const r=await sb.from("artworks").select("id,title,image_path,colours,artist_id,profiles(display_name)").order("created_at",{ascending:false}).limit(200);
-A=r.data||[];draw()});
+const r=await sb.from("artworks").select("id,title,image_path,thumb_path,colours,mediums,created_at,artist_id,profiles(display_name)").order("created_at",{ascending:false}).limit(200);
+A=r.data||[];
+if(me){
+const [p,f]=await Promise.all([sb.from("profiles").select("interests").eq("id",me.id).maybeSingle(),sb.from("follows").select("artist_id").eq("follower_id",me.id)]);
+mine=(p.data&&p.data.interests)||[];fr=new Set((f.data||[]).map(x=>x.artist_id));
+$("fy").style.display="inline-block"}
+draw()});
 </script>
 </body>
 </html>
