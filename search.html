@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier: search</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+.top{padding:clamp(20px,5vw,48px) 0 8px}
+#q{width:100%;font:400 clamp(34px,8vw,64px)/1.1 "Instrument Serif",Georgia,serif;letter-spacing:-.02em;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:6px 0 12px;border-radius:0}
+#q:focus{outline:0;border-color:var(--ink)}
+#q::placeholder{color:var(--soft);opacity:.6}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 30px}
+.chip{border:1px solid var(--line);background:none;color:var(--soft);border-radius:99px;padding:5px 14px;font:inherit;cursor:pointer}
+.chip:hover{color:var(--ink);border-color:var(--ink)}
+h2{font:400 13px Figtree,sans-serif;color:var(--soft);margin:34px 0 12px;letter-spacing:.02em}
+.hit{display:block;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.hit b{font-weight:500}
+.hit p{margin:4px 0 0;font:400 19px/1.35 "Instrument Serif",Georgia,serif;overflow-wrap:anywhere}
+.msg{color:var(--soft);padding:20px 0}
+:is(button,a,input):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="site.js"></script>
+<div class="top">
+<form id="f"><input id="q" type="search" placeholder="Search Atelier" autocomplete="off" aria-label="Search Atelier"></form>
+<div class="chips" id="sg"></div>
+</div>
+<div id="out"></div>
+<div style="height:80px"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const MED=["Ink","Digital","Watercolour","Oil","3D","Animation","Photography","Mixed"],COL=["red","ochre","green","blue","violet","ink"];
+$("sg").innerHTML=MED.concat(COL).map(x=>`<button type="button" class="chip">${x}</button>`).join("");
+$("sg").onclick=e=>{const b=e.target.closest(".chip");if(b){$("q").value=b.textContent;run()}};
+let timer,tok=0;
+$("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(run,300)};
+$("f").onsubmit=e=>{e.preventDefault();run()};
+function tile(a){return `<figure><a href="${imgUrl(a.image_path)}" target="_blank" rel="noopener"><img class="art" loading="lazy" src="${imgUrl(a.thumb_path||a.image_path)}" alt="${esc(a.title)}"></a><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a></figcaption></figure>`}
+async function run(){
+const raw=$("q").value.trim(),q=raw.replace(/[%_\\]/g," ").trim(),my=++tok;
+history.replaceState(null,"",raw?"?q="+encodeURIComponent(raw):location.pathname);
+if(q.length<2){$("out").innerHTML='<p class="msg">Search for artists, work, mediums, colours, or notes.</p>';return}
+const like="%"+q+"%",low=q.toLowerCase();
+const med=MED.find(m=>m.toLowerCase()===low),col=COL.find(c=>c===low);
+const sel="id,title,image_path,thumb_path,artist_id,profiles(display_name)";
+const jobs=[
+sb.from("profiles").select("id,display_name,bio,avatar_path").ilike("display_name",like).limit(12),
+sb.from("artworks").select(sel).ilike("title",like).order("created_at",{ascending:false}).limit(24),
+sb.from("notes").select("id,body,author_id,profiles(display_name)").ilike("body",like).order("created_at",{ascending:false}).limit(10)];
+if(med)jobs.push(sb.from("artworks").select(sel).contains("mediums",[med]).order("created_at",{ascending:false}).limit(24));
+if(col)jobs.push(sb.from("artworks").select(sel).contains("colours",[col]).order("created_at",{ascending:false}).limit(24));
+const res=await Promise.all(jobs);
+if(my!==tok)return;
+const people=res[0].data||[],notes=res[2].data||[],seen={},work=[];
+res.slice(1).forEach((r,i)=>{if(i===1)return;(r.data||[]).forEach(a=>{if(!seen[a.id]){seen[a.id]=1;work.push(a)}})});
+let h="";
+if(people.length)h+="<h2>Artists</h2><div class=\"frow\">"+people.map(p=>`<a class="fr" href="profile.html?id=${p.id}">${p.avatar_path?`<img src="${imgUrl(p.avatar_path)}" alt="">`:`<span class="ini">${esc((p.display_name||"A").charAt(0).toUpperCase())}</span>`}<span>${esc(p.display_name)}</span></a>`).join("")+"</div>";
+if(work.length)h+="<h2>Work</h2><div class=\"wall\">"+work.map(tile).join("")+"</div>";
+if(notes.length)h+="<h2>Notes</h2>"+notes.map(n=>`<a class="hit" href="profile.html?id=${n.author_id}"><b>${esc(n.profiles&&n.profiles.display_name)}</b><p>${esc(n.body)}</p></a>`).join("");
+$("out").innerHTML=h||'<p class="msg">Nothing found for "'+esc(raw)+'". Try another word, a medium, or a colour.</p>'}
+ready.then(()=>{const p=new URLSearchParams(location.search).get("q");if(p)$("q").value=p;run();$("q").focus()});
+</script>
+</body>
+</html>
