@@ -54,17 +54,18 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 <p class="bio">Ink drawings and soft-colour animation about markets, rain, and the hour before sunrise.</p>
 <p class="meta">Lagos. Sharing since 2026. 14 works.</p>
 <div class="row">
-<button class="follow" id="follow">Follow</button>
+<button class="follow" id="follow">Add friend</button>
 <button class="ghost" id="tip">Send a tip</button>
 </div>
 </div>
 </section>
 
+<section id="friends" style="display:none"></section>
 <main class="wall" id="wall"></main>
 
 <section class="support">
 <p><b>Support Ada's studio</b>Your support goes straight to the artist and helps new work get made.</p>
-<div class="row"><button class="ghost">Tip once</button><button class="follow">Support monthly</button></div>
+<div class="row"><button class="follow" id="supportBtn">Support</button></div>
 </section>
 </div>
 
@@ -86,15 +87,32 @@ const W=ar.data||[];
 document.querySelector(".meta").textContent=W.length+(W.length===1?" work. ":" works. ")+"Joined "+new Date(p.created_at).getFullYear()+".";
 document.querySelector(".support b").textContent="Support "+(p.display_name||"this artist")+"'s studio";
 $("wall").innerHTML=W.length?W.map(a=>`<figure><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption>${esc(a.title)}</figcaption></figure>`).join(""):'<p class="empty">No work shared yet.</p>';
+async function showFriends(){
+const r=await sb.from("follows").select("follower_id,profiles!follows_follower_id_fkey(display_name,avatar_path)",{count:"exact"}).eq("artist_id",id).order("created_at",{ascending:false}).limit(12);
+const box=$("friends"),n=r.count||0;
+if(!n){box.style.display="none";return}
+box.style.display="block";
+box.innerHTML='<div class="flab">'+n+(n===1?" friend":" friends")+'</div><div class="frow">'+(r.data||[]).map(function(x){var q=x.profiles||{},nm=q.display_name||"Artist";return '<a class="fr" href="profile.html?id='+x.follower_id+'">'+(q.avatar_path?'<img src="'+imgUrl(q.avatar_path)+'" alt="">':'<span class="ini">'+esc(nm.charAt(0).toUpperCase())+'</span>')+'<span>'+esc(nm)+'</span></a>'}).join("")+'</div>';
+}
+showFriends();
+const own=!!(me&&me.id===id);
+const ok=!!p.support_url&&/^https:\/\//i.test(p.support_url);
+const openSupport=()=>window.open(p.support_url,"_blank","noopener,noreferrer");
+$("supportBtn").onclick=openSupport;
+if(!own){if(ok){$("tip").textContent="Support";$("tip").onclick=openSupport}else{$("tip").style.display="none"}}
+if(!ok){
+if(own){document.querySelector(".support p").innerHTML="<b>Add a support link</b>Add a link in Edit profile so fans can support your work.";$("supportBtn").textContent="Edit profile";$("supportBtn").onclick=()=>{location.href="edit-profile.html"}}
+else{document.querySelector(".support").style.display="none"}
+}
 const f=$("follow");
 if(me&&me.id===id){f.style.display="none";$("tip").textContent="Edit profile";$("tip").onclick=()=>{location.href="edit-profile.html"}}
 else{
 let on=false;
 if(me){const r=await sb.from("follows").select("artist_id").eq("follower_id",me.id).eq("artist_id",id);on=!!(r.data&&r.data.length)}
-const set=()=>{f.classList.toggle("on",on);f.textContent=on?"Following":"Follow"};set();
+const set=()=>{f.classList.toggle("on",on);f.textContent=on?"Friends":"Add friend"};set();
 f.onclick=async()=>{if(!me){location.href="auth.html";return}
 const r=on?await sb.from("follows").delete().eq("follower_id",me.id).eq("artist_id",id):await sb.from("follows").insert({follower_id:me.id,artist_id:id});
-if(!r.error){on=!on;set()}};
+if(!r.error){on=!on;set();showFriends()}};
 }
 });
 </script>
