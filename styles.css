@@ -31,3 +31,5 @@ figcaption a:hover{color:var(--ink)}
 .fr:hover{border-color:var(--ink)}
 .fr img,.ini{width:28px;height:28px;border-radius:50%;object-fit:cover}
 .ini{display:grid;place-items:center;background:var(--line);font-size:13px}
+figure>a{display:block}
+.auth svg{display:block}
