@@ -22,3 +22,5 @@ figcaption a{color:var(--soft);text-decoration:none;display:block;font:400 13px 
 figcaption a:hover{color:var(--ink)}
 .empty{column-span:all;color:var(--soft)}
 .empty a{color:var(--ink)}
+.avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;display:block;margin-bottom:16px;background:var(--line)}
+.avatar[hidden]{display:none}
