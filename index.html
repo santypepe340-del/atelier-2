@@ -35,6 +35,8 @@ footer{padding:40px 0 60px;color:var(--soft);font-size:13px}
 <body>
 <div class="wrap">
 <div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script src="site.js"></script>
 
 <h1>Everyone's work, in the order it <em>arrived.</em></h1>
@@ -46,35 +48,22 @@ footer{padding:40px 0 60px;color:var(--soft);font-size:13px}
 </div>
 
 <main class="wall" id="wall"></main>
-<footer>Placeholder artwork. Your creators' real work goes here.</footer>
+<footer>Atelier. A home for creators, with no algorithm.</footer>
 </div>
 
 <script>
-const A=[
-["Low tide, 6 a.m.","Ada N.","blue",1.25,"#8FB4D9","#E9D9B8","#35567A"],
-["Marigold study","Tolu A.","ochre",.8,"#F2B84B","#D9742B","#F6E3B4"],
-["Quiet fern","Mira K.","green",1.5,"#9DB88A","#2F5A45","#DDE6C9"],
-["Night market","Chidi O.","violet",1.1,"#6A4C9C","#E07A8F","#241B3A"],
-["Ember","Sade B.","red",.9,"#E2563B","#F3A27D","#5A1D1D"],
-["Paper boats","Leo V.","blue",1.4,"#B9CDE8","#F4EFE3","#6F8FBF"],
-["Dust and brass","Ife R.","ochre",1.2,"#C99A4A","#6B4A24","#EAD9B5"],
-["Harmattan light","Zainab M.","ochre",.75,"#F0C98A","#C9825A","#F8EBD3"],
-["Moss, enlarged","Jun P.","green",1,"#5E8C61","#B7CF8E","#1F3B2D"],
-["Soft machine","Kemi L.","violet",1.3,"#B8A6DC","#7D6BB0","#EFEAF8"],
-["Red room","Oto D.","red",1.15,"#C4372F","#F08A6B","#3A1210"],
-["Deep water","Anya S.","blue",.85,"#2D4F8A","#79A6D6","#0F1E3A"],
-["Garden after rain","Femi T.","green",1.35,"#7FB08F","#E4EFC2","#2E5B4B"],
-["Ink and ember","Nia C.","ink",1.05,"#3A3834","#D9673A","#14130F"]
-];
-const wall=document.getElementById("wall");let mode="new",hue=null;
+const $=id=>document.getElementById(id);
+const wall=$("wall");let mode="new",hue=null,A=[];
 function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function draw(){
-let list=A.filter(a=>!hue||a[2]===hue);if(mode==="shuffle")list=shuf(list);
-wall.innerHTML=list.map(a=>`<figure tabindex="0"><div class="art" style="aspect-ratio:1/${a[3]};background:radial-gradient(circle at 28% 24%,${a[4]},transparent 58%),radial-gradient(circle at 76% 72%,${a[5]},transparent 62%),${a[6]}"></div><figcaption><b>${a[0]}</b><span>${a[1]}</span></figcaption></figure>`).join("")}
-document.getElementById("modes").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));draw()};
-const sw=document.getElementById("sw");
+let l=A.filter(a=>!hue||(a.colours||[]).includes(hue));if(mode==="shuffle")l=shuf(l);
+wall.innerHTML=l.length?l.map(a=>`<figure tabindex="0"><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a></figcaption></figure>`).join(""):`<p class="empty">${A.length?"No work in this colour yet.":'Nothing here yet. <a href="upload.html">Share the first piece.</a>'}</p>`}
+$("modes").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));draw()};
+const sw=$("sw");
 [["red","#D2503A"],["ochre","#E3A93C"],["green","#5E8C61"],["blue","#4A74B4"],["violet","#8068B8"],["ink","#2B2925"]].forEach(([n,c])=>{const b=document.createElement("button");b.style.background=c;b.title=n;b.setAttribute("aria-label",n);b.onclick=()=>{hue=hue===n?null:n;[...sw.querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b&&hue));draw()};sw.appendChild(b)});
-draw();
+ready.then(async()=>{
+const r=await sb.from("artworks").select("id,title,image_path,colours,artist_id,profiles(display_name)").order("created_at",{ascending:false}).limit(200);
+A=r.data||[];draw()});
 </script>
 </body>
 </html>
