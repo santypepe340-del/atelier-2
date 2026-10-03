@@ -40,6 +40,8 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 <body>
 <div class="wrap">
 <div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script src="site.js"></script>
 
 <section class="intro">
@@ -57,7 +59,6 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 </div>
 </section>
 
-<div class="tabs" id="tabs"><button class="on" data-t="work">Work</button><button data-t="col">Collections</button></div>
 <main class="wall" id="wall"></main>
 
 <section class="support">
@@ -67,25 +68,33 @@ figcaption span{display:block;font:400 13px Figtree,sans-serif;color:var(--soft)
 </div>
 
 <script>
-const W=[
-["Low tide, 6 a.m.",1.25,"#8FB4D9","#E9D9B8","#35567A"],
-["Marigold study",.8,"#F2B84B","#D9742B","#F6E3B4"],
-["Night market",1.1,"#6A4C9C","#E07A8F","#241B3A"],
-["Paper boats",1.4,"#B9CDE8","#F4EFE3","#6F8FBF"],
-["Harmattan light",.75,"#F0C98A","#C9825A","#F8EBD3"],
-["Deep water",.85,"#2D4F8A","#79A6D6","#0F1E3A"],
-["Ember",.95,"#E2563B","#F3A27D","#5A1D1D"],
-["Quiet fern",1.5,"#9DB88A","#2F5A45","#DDE6C9"],
-["Soft machine",1.2,"#B8A6DC","#7D6BB0","#EFEAF8"]
-];
-const C=[["Rain studies",5],["Market sketches",8],["Animation stills",4]];
-const wall=document.getElementById("wall");
-function art(a){return `<figure><div class="art" style="aspect-ratio:1/${a[1]};background:radial-gradient(circle at 28% 24%,${a[2]},transparent 58%),radial-gradient(circle at 76% 72%,${a[3]},transparent 62%),${a[4]}"></div><figcaption>${a[0]}</figcaption></figure>`}
-function show(t){wall.innerHTML=t==="work"?W.map(art).join(""):C.map((c,i)=>{const a=W[(i*3)%W.length];return art([c[0]+"<span>"+c[1]+" works</span>",1.1,a[2],a[3],a[4]])}).join("")}
-document.getElementById("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));show(b.dataset.t)};
-const f=document.getElementById("follow");
-f.onclick=()=>{const on=f.classList.toggle("on");f.textContent=on?"Following":"Follow"};
-show("work");
+const $=id=>document.getElementById(id);
+ready.then(async()=>{
+const id=new URLSearchParams(location.search).get("id")||(me&&me.id);
+if(!id){location.href="auth.html";return}
+const pr=await sb.from("profiles").select("*").eq("id",id).maybeSingle();
+if(!pr.data){document.querySelector("h1").textContent="Artist not found";return}
+const p=pr.data;
+document.title=p.display_name+" on Atelier";
+document.querySelector(".role").textContent="Artist on Atelier";
+document.querySelector("h1").textContent=p.display_name||"Artist";
+document.querySelector(".bio").textContent=p.bio||"";
+const ar=await sb.from("artworks").select("id,title,image_path").eq("artist_id",id).order("created_at",{ascending:false});
+const W=ar.data||[];
+document.querySelector(".meta").textContent=W.length+(W.length===1?" work. ":" works. ")+"Joined "+new Date(p.created_at).getFullYear()+".";
+document.querySelector(".support b").textContent="Support "+(p.display_name||"this artist")+"'s studio";
+$("wall").innerHTML=W.length?W.map(a=>`<figure><img class="art" loading="lazy" src="${imgUrl(a.image_path)}" alt="${esc(a.title)}"><figcaption>${esc(a.title)}</figcaption></figure>`).join(""):'<p class="empty">No work shared yet.</p>';
+const f=$("follow");
+if(me&&me.id===id){f.style.display="none";$("tip").style.display="none"}
+else{
+let on=false;
+if(me){const r=await sb.from("follows").select("artist_id").eq("follower_id",me.id).eq("artist_id",id);on=!!(r.data&&r.data.length)}
+const set=()=>{f.classList.toggle("on",on);f.textContent=on?"Following":"Follow"};set();
+f.onclick=async()=>{if(!me){location.href="auth.html";return}
+const r=on?await sb.from("follows").delete().eq("follower_id",me.id).eq("artist_id",id):await sb.from("follows").insert({follower_id:me.id,artist_id:id});
+if(!r.error){on=!on;set()}};
+}
+});
 </script>
 </body>
 </html>
