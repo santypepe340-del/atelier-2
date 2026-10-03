@@ -10,7 +10,7 @@
 .box{max-width:480px;padding:clamp(24px,6vw,64px) 0 80px}
 h1{font:400 clamp(40px,8vw,64px)/1 "Instrument Serif",Georgia,serif;letter-spacing:-.025em;margin:0 0 32px}
 label{display:block;color:var(--soft);font-size:13px;margin:0 0 6px}
-input[type=text],textarea{width:100%;font:inherit;font-size:18px;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0 10px;margin-bottom:26px;border-radius:0}
+input[type=text],input[type=url],textarea{width:100%;font:inherit;font-size:18px;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0 10px;margin-bottom:26px;border-radius:0}
 textarea{resize:vertical;min-height:90px;margin-bottom:6px}
 input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 .cnt{color:var(--soft);font-size:13px;text-align:right;margin-bottom:26px}
@@ -21,6 +21,7 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 .msg{min-height:24px;color:var(--accent);margin:0 0 14px}
 .pub{background:var(--ink);color:var(--paper);border:0;border-radius:99px;padding:12px 30px;font:inherit;cursor:pointer}
 .pub:disabled{opacity:.4}
+.hint{color:var(--soft);font-size:13px;margin:-16px 0 26px}
 .cancel{margin-left:16px;color:var(--soft);text-decoration:none}
 </style>
 </head>
@@ -43,6 +44,9 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 <label for="bio">About you</label>
 <textarea id="bio" maxlength="300" placeholder="What do you make? A line or two is plenty."></textarea>
 <div class="cnt" id="cnt">0/300</div>
+<label for="support">Support link (optional)</label>
+<input id="support" type="url" maxlength="300" placeholder="https://" autocomplete="url">
+<p class="hint">Where fans can send tips: a Paystack page, PayPal, Ko-fi, Buy Me a Coffee. Atelier does not handle payments.</p>
 <p id="msg" class="msg" role="status"></p>
 <button class="pub" id="go">Save</button><a class="cancel" href="profile.html">Cancel</a>
 </form>
@@ -53,9 +57,9 @@ const $=id=>document.getElementById(id);let file=null,old=null;
 function count(){$("cnt").textContent=$("bio").value.length+"/300"}
 ready.then(async()=>{
 if(!me){location.href="auth.html";return}
-const r=await sb.from("profiles").select("display_name,bio,avatar_path").eq("id",me.id).maybeSingle();
+const r=await sb.from("profiles").select("display_name,bio,avatar_path,support_url").eq("id",me.id).maybeSingle();
 const p=r.data||{};old=p.avatar_path||null;
-$("name").value=p.display_name||"";$("bio").value=p.bio||"";
+$("name").value=p.display_name||"";$("bio").value=p.bio||"";$("support").value=p.support_url||"";
 if(old){$("pv").src=imgUrl(old);$("pv").hidden=false}
 count()});
 $("bio").oninput=count;
@@ -63,13 +67,15 @@ $("pick").onclick=()=>$("file").click();
 $("file").onchange=e=>{const f=e.target.files[0];if(!f||!f.type.startsWith("image/"))return;file=f;const r=new FileReader();r.onload=()=>{$("pv").src=r.result;$("pv").hidden=false};r.readAsDataURL(f)};
 $("f").onsubmit=async e=>{e.preventDefault();$("go").disabled=true;$("msg").textContent="";
 try{
+const su=$("support").value.trim();
+if(su&&!/^https:\/\//i.test(su))throw new Error("The support link must start with https://");
 let path=old;
 if(file){
 const ext=((file.name.split(".").pop()||"jpg")+"").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
 path=me.id+"/avatar-"+Date.now()+"."+ext;
 const u=await sb.storage.from("artworks").upload(path,file,{contentType:file.type});
 if(u.error)throw u.error}
-const r=await sb.from("profiles").update({display_name:$("name").value.trim(),bio:$("bio").value.trim()||null,avatar_path:path}).eq("id",me.id);
+const r=await sb.from("profiles").update({display_name:$("name").value.trim(),bio:$("bio").value.trim()||null,avatar_path:path,support_url:su||null}).eq("id",me.id);
 if(r.error)throw r.error;
 if(file&&old)sb.storage.from("artworks").remove([old]);
 location.href="profile.html";
