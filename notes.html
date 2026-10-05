@@ -31,6 +31,16 @@ textarea:focus{outline:0;border-color:var(--ink)}
 .del:hover{color:var(--ink)}
 .note p{margin:4px 0 0;font:400 21px/1.4 "Instrument Serif",Georgia,serif;white-space:pre-wrap;overflow-wrap:anywhere}
 .empty{color:var(--soft);padding:28px 0}
+.cm{background:none;border:0;color:var(--soft);font:inherit;font-size:13px;padding:8px 0 0;cursor:pointer}.cm:hover{color:var(--ink)}
+.thread{margin-top:10px;padding-left:14px;border-left:1px solid var(--line)}
+.rc{padding:8px 0;font-size:14px}.rc a{color:var(--ink);text-decoration:none}.rc span{color:var(--soft);margin-left:8px}
+.rc p{margin:2px 0 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.cdel{margin-left:8px;background:none;border:0;color:var(--soft);font:inherit;font-size:12px;cursor:pointer}
+.rf{display:flex;gap:8px;margin-top:8px}
+.rf input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:6px 0;border-radius:0}
+.rf input:focus{outline:0;border-color:var(--ink)}
+.cpost{background:var(--ink);color:var(--paper);border:0;border-radius:99px;padding:6px 16px;font:inherit;font-size:14px;cursor:pointer}
+.rs{color:var(--soft);font-size:14px;margin:8px 0 0}.rs a{color:var(--ink)}
 #more{display:none;margin:28px auto 0;background:none;border:1px solid var(--line);border-radius:99px;padding:9px 24px;font:inherit;color:var(--ink);cursor:pointer}
 #more:hover{border-color:var(--ink)}
 :is(button,a,textarea):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -57,21 +67,24 @@ textarea:focus{outline:0;border-color:var(--ink)}
 </div>
 <script>
 const $=id=>document.getElementById(id);
-let tab="all",off=0;const PS=30;
+let tab="all",off=0;const PS=30;const counts={};
+function cmLabel(n){return n?n+(n===1?" comment":" comments"):"Comment"}
 function ago(t){const s=(Date.now()-new Date(t))/1000;if(s<60)return"just now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";if(s<604800)return Math.floor(s/86400)+"d";return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"})}
 function item(n){const q=n.profiles||{},nm=q.display_name||"Artist";
 const av=q.avatar_path?`<img src="${imgUrl(q.avatar_path)}" alt="">`:`<span class="ini">${esc(nm.charAt(0).toUpperCase())}</span>`;
 const del=me&&me.id===n.author_id?`<button class="del" data-id="${n.id}">Delete</button>`:"";
-return `<article class="note"><a href="profile.html?id=${n.author_id}" aria-label="${esc(nm)}">${av}</a><div style="flex:1;min-width:0"><div class="nh"><a href="profile.html?id=${n.author_id}">${esc(nm)}</a><span>${ago(n.created_at)}</span>${del}</div><p>${esc(n.body)}</p></div></article>`}
+return `<article class="note"><a href="profile.html?id=${n.author_id}" aria-label="${esc(nm)}">${av}</a><div style="flex:1;min-width:0"><div class="nh"><a href="profile.html?id=${n.author_id}">${esc(nm)}</a>${badge(q.founding)}<span>${ago(n.created_at)}</span>${del}</div><p>${esc(n.body)}</p><button class="cm" data-id="${n.id}">${cmLabel(counts[n.id]||0)}</button><div class="thread" id="t-${n.id}" data-author="${n.author_id}" hidden></div></div></article>`}
 async function load(reset){
 if(reset){off=0;$("list").innerHTML=""}
-let q=sb.from("notes").select("id,body,created_at,author_id,profiles(display_name,avatar_path)").order("created_at",{ascending:false}).range(off,off+PS-1);
+let q=sb.from("notes").select("id,body,created_at,author_id,profiles!notes_author_id_fkey(display_name,avatar_path,founding)").order("created_at",{ascending:false}).range(off,off+PS-1);
 if(tab==="friends"){
 const f=await sb.from("follows").select("artist_id").eq("follower_id",me.id);
 const ids=(f.data||[]).map(x=>x.artist_id);
 if(!ids.length){$("list").innerHTML='<p class="empty">Add friends to see their notes here.</p>';$("more").style.display="none";return}
 q=q.in("author_id",ids)}
 const r=await q,d=r.data||[];
+const ids=d.map(x=>x.id);
+if(ids.length){const c=await sb.from("note_comments").select("note_id").in("note_id",ids);(c.data||[]).forEach(x=>{counts[x.note_id]=(counts[x.note_id]||0)+1})}
 $("list").insertAdjacentHTML("beforeend",d.map(item).join(""));
 if(reset&&!d.length)$("list").innerHTML='<p class="empty">No notes yet. Be the first to write one.</p>';
 off+=d.length;$("more").style.display=d.length===PS?"block":"none"}
@@ -83,6 +96,27 @@ if(r.error){alert("Could not post: "+r.error.message);count();return}
 $("body").value="";count();load(true)};
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;[...$("tabs").children].forEach(x=>x.classList.toggle("on",x===b));load(true)};
 $("more").onclick=()=>load(false);
+async function thread(id){
+const box=$("t-"+id);
+const r=await sb.from("note_comments").select("id,body,created_at,author_id,profiles!note_comments_author_id_fkey(display_name,founding)").eq("note_id",id).order("created_at");
+const d=r.data||[];counts[id]=d.length;
+const btn=document.querySelector('.cm[data-id="'+id+'"]');if(btn)btn.textContent=cmLabel(d.length);
+box.innerHTML=d.map(x=>{const q=x.profiles||{},nm=q.display_name||"Artist";
+const del=me&&(me.id===x.author_id||me.id===box.dataset.author)?`<button class="cdel" data-id="${x.id}" data-note="${id}">Delete</button>`:"";
+return `<div class="rc"><a href="profile.html?id=${x.author_id}"><b>${esc(nm)}</b></a>${badge(q.founding)}<span>${ago(x.created_at)}</span>${del}<p>${esc(x.body)}</p></div>`}).join("")+(me?`<div class="rf"><input type="text" maxlength="500" placeholder="Write a comment" aria-label="Write a comment" data-note="${id}"><button class="cpost" data-note="${id}">Post</button></div>`:'<p class="rs"><a href="auth.html">Sign in</a> to comment.</p>')}
+$("list").addEventListener("click",async e=>{
+const cm=e.target.closest(".cm");
+if(cm){const box=$("t-"+cm.dataset.id);if(box.hidden){box.hidden=false;await thread(cm.dataset.id)}else box.hidden=true;return}
+const post=e.target.closest(".cpost");
+if(post){const id=post.dataset.note,inp=document.querySelector('.rf input[data-note="'+id+'"]'),body=inp.value.trim();if(!body)return;post.disabled=true;
+const r=await sb.from("note_comments").insert({note_id:id,author_id:me.id,body});
+if(r.error){alert("Could not comment: "+r.error.message);post.disabled=false;return}
+await thread(id);return}
+const del=e.target.closest(".cdel");
+if(del){if(!confirm("Delete this comment?"))return;
+const r=await sb.from("note_comments").delete().eq("id",del.dataset.id);
+if(r.error){alert("Could not delete: "+r.error.message);return}
+await thread(del.dataset.note)}});
 $("list").onclick=async e=>{const b=e.target.closest(".del");if(!b||!confirm("Delete this note?"))return;
 const r=await sb.from("notes").delete().eq("id",b.dataset.id);
 if(r.error){alert("Could not delete: "+r.error.message);return}
