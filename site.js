@@ -3,6 +3,7 @@ var p=location.pathname.split("/").pop()||"index.html";
 window.sb=supabase.createClient(SB_URL,SB_KEY);
 window.imgUrl=function(path){return SB_URL+"/storage/v1/object/public/artworks/"+path};
 window.esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+window.badge=function(f){return f?'<span class="vb" title="Founding member" aria-label="Founding member"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="m7 12.5 3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>':""};
 window.ago=function(t){var s=(Date.now()-new Date(t))/1000;if(s<60)return"just now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";if(s<604800)return Math.floor(s/86400)+"d";return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"})};
 window.tile=function(a,withArtist){
 var nm=a.profiles&&a.profiles.display_name,link="piece.html?id="+a.id;
@@ -12,7 +13,7 @@ if(a.kind==="writing"){var b=a.body||"";return '<figure><a class="wr" href="'+li
 return '<figure tabindex="0"><a href="'+link+'"><img class="art" loading="lazy" src="'+imgUrl(a.thumb_path||a.image_path)+'" alt="'+esc(a.title)+'"></a><figcaption><b>'+esc(a.title)+'</b>'+who+why+'</figcaption></figure>'};
 window.ready=sb.auth.getSession().then(function(r){
 window.me=r.data.session?r.data.session.user:null;
-var links=[["index.html","Discover"],["notes.html","Notes"],["challenges.html","Challenges"],["canvas.html","Canvas"]];
+var links=[["index.html","Discover"],["notes.html","Notes"],["challenges.html","Challenges"]];
 if(me){links.push(["saved.html","Saved"]);links.push(["profile.html","My profile"])}
 function item(l){var on=p===l[0]&&(l[0]!=="profile.html"||!location.search);return '<a href="'+l[0]+'"'+(on?' class="on"':'')+'>'+l[1]+'</a>'}
 var nav=links.map(item).join("");
