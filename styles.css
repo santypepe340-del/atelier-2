@@ -61,3 +61,7 @@ figcaption{font-size:15px}
 .btn,.chip,.ghost{min-height:42px}
 .chip{padding:8px 16px}
 }
+.vb{display:inline-flex;vertical-align:-3px;margin-left:5px;color:var(--accent)}
+.vb svg{width:16px;height:16px}
+h1 .vb{margin-left:.15em;vertical-align:.1em}
+h1 .vb svg{width:.32em;height:.32em}
