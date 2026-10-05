@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier: challenges</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+h1{font:400 clamp(44px,9vw,76px)/1 "Instrument Serif",Georgia,serif;letter-spacing:-.03em;margin:clamp(24px,5vw,56px) 0 10px}
+.sub{color:var(--soft);margin:0 0 20px}
+.ch{border-top:1px solid var(--line);padding:34px 0 20px}
+.tag{color:var(--accent);font-size:13px;margin:0 0 8px}
+h2{font:400 clamp(32px,6vw,52px)/1.05 "Instrument Serif",Georgia,serif;letter-spacing:-.02em;margin:0 0 10px}
+.pr{max-width:34em;margin:0 0 20px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+figure{margin:0 0 20px;break-inside:avoid}
+.wall{columns:2;column-gap:14px}
+@media(min-width:720px){.wall{columns:3;column-gap:20px}}
+@media(min-width:1020px){.wall{columns:4}}
+.art{border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -18px rgba(0,0,0,.35)}
+figcaption{padding-top:8px;font:400 17px/1.2 "Instrument Serif",Georgia,serif}
+figcaption a{font:400 13px Figtree,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="site.js"></script>
+<h1>Challenges</h1>
+<p class="sub">A shared prompt, a gallery of everyone's take. Art, writing, anything.</p>
+<div id="out" style="padding-bottom:80px"></div>
+</div>
+<script>
+const sel="id,title,image_path,thumb_path,kind,body,artist_id,profiles!artworks_artist_id_fkey(display_name)";
+ready.then(async()=>{
+const today=new Date().toISOString().slice(0,10);
+const r=await sb.from("challenges").select("id,title,prompt,starts_on,ends_on").order("starts_on",{ascending:false}).limit(6);
+const cs=r.data||[];
+if(!cs.length){document.getElementById("out").innerHTML='<p class="empty">No challenges yet. The first one is coming soon.</p>';return}
+const ent=await Promise.all(cs.map(c=>sb.from("artworks").select(sel).eq("challenge_id",c.id).order("created_at",{ascending:false}).limit(24)));
+document.getElementById("out").innerHTML=cs.map((c,i)=>{
+const live=c.starts_on<=today&&today<=c.ends_on,e=ent[i].data||[];
+const tag=live?"Open now, until "+c.ends_on:(today<c.starts_on?"Starts "+c.starts_on:"Ended "+c.ends_on);
+return `<section class="ch"><p class="tag">${esc(tag)}</p><h2>${esc(c.title)}</h2><p class="pr">${esc(c.prompt)}</p>${live?`<div class="row"><a class="btn" href="upload.html?challenge=${c.id}">Share artwork</a><a class="btn ghost" href="write.html?challenge=${c.id}">Write something</a></div>`:""}<div class="wall">${e.length?e.map(a=>tile(a,true)).join(""):'<p class="empty">No entries yet. Be the first.</p>'}</div></section>`}).join("")});
+</script>
+</body>
+</html>
