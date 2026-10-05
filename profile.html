@@ -81,7 +81,7 @@ const p=pr.data;
 document.title=p.display_name+" on Atelier";
 if(p.avatar_path){$("av").src=imgUrl(p.avatar_path);$("av").hidden=false}
 document.querySelector(".role").textContent="Artist on Atelier";
-document.querySelector("h1").textContent=p.display_name||"Artist";
+document.querySelector("h1").innerHTML=esc(p.display_name||"Artist")+badge(p.founding);
 document.querySelector(".bio").textContent=p.bio||"";
 const ar=await sb.from("artworks").select("id,title,image_path,thumb_path,kind,body,artist_id").eq("artist_id",id).order("created_at",{ascending:false});
 const W=ar.data||[];
