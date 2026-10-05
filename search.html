@@ -37,20 +37,19 @@ h2{font:400 13px Figtree,sans-serif;color:var(--soft);margin:34px 0 12px;letter-
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const MED=["Ink","Digital","Watercolour","Oil","3D","Animation","Photography","Mixed"],COL=["red","ochre","green","blue","violet","ink"];
+const MED=["Ink","Digital","Watercolour","Oil","3D","Animation","Photography","Mixed","Poetry","Story","Essay","Script"],COL=["red","ochre","green","blue","violet","ink"];
 $("sg").innerHTML=MED.concat(COL).map(x=>`<button type="button" class="chip">${x}</button>`).join("");
 $("sg").onclick=e=>{const b=e.target.closest(".chip");if(b){$("q").value=b.textContent;run()}};
 let timer,tok=0;
 $("q").oninput=()=>{clearTimeout(timer);timer=setTimeout(run,300)};
 $("f").onsubmit=e=>{e.preventDefault();run()};
-function tile(a){return `<figure><a href="${imgUrl(a.image_path)}" target="_blank" rel="noopener"><img class="art" loading="lazy" src="${imgUrl(a.thumb_path||a.image_path)}" alt="${esc(a.title)}"></a><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a></figcaption></figure>`}
 async function run(){
 const raw=$("q").value.trim(),q=raw.replace(/[%_\\]/g," ").trim(),my=++tok;
 history.replaceState(null,"",raw?"?q="+encodeURIComponent(raw):location.pathname);
 if(q.length<2){$("out").innerHTML='<p class="msg">Search for artists, work, mediums, colours, or notes.</p>';return}
 const like="%"+q+"%",low=q.toLowerCase();
 const med=MED.find(m=>m.toLowerCase()===low),col=COL.find(c=>c===low);
-const sel="id,title,image_path,thumb_path,artist_id,profiles(display_name)";
+const sel="id,title,image_path,thumb_path,kind,body,artist_id,profiles!artworks_artist_id_fkey(display_name)";
 const jobs=[
 sb.from("profiles").select("id,display_name,bio,avatar_path").ilike("display_name",like).limit(12),
 sb.from("artworks").select(sel).ilike("title",like).order("created_at",{ascending:false}).limit(24),
@@ -63,7 +62,7 @@ const people=res[0].data||[],notes=res[2].data||[],seen={},work=[];
 res.slice(1).forEach((r,i)=>{if(i===1)return;(r.data||[]).forEach(a=>{if(!seen[a.id]){seen[a.id]=1;work.push(a)}})});
 let h="";
 if(people.length)h+="<h2>Artists</h2><div class=\"frow\">"+people.map(p=>`<a class="fr" href="profile.html?id=${p.id}">${p.avatar_path?`<img src="${imgUrl(p.avatar_path)}" alt="">`:`<span class="ini">${esc((p.display_name||"A").charAt(0).toUpperCase())}</span>`}<span>${esc(p.display_name)}</span></a>`).join("")+"</div>";
-if(work.length)h+="<h2>Work</h2><div class=\"wall\">"+work.map(tile).join("")+"</div>";
+if(work.length)h+="<h2>Work</h2><div class=\"wall\">"+work.map(a=>tile(a,true)).join("")+"</div>";
 if(notes.length)h+="<h2>Notes</h2>"+notes.map(n=>`<a class="hit" href="profile.html?id=${n.author_id}"><b>${esc(n.profiles&&n.profiles.display_name)}</b><p>${esc(n.body)}</p></a>`).join("");
 $("out").innerHTML=h||'<p class="msg">Nothing found for "'+esc(raw)+'". Try another word, a medium, or a colour.</p>'}
 ready.then(()=>{const p=new URLSearchParams(location.search).get("q");if(p)$("q").value=p;run();$("q").focus()});
