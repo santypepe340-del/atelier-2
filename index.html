@@ -30,6 +30,7 @@ figcaption span{color:var(--soft)}
 @media(hover:hover){figcaption{opacity:0;transition:opacity .25s}figure:hover figcaption,figure:focus-within figcaption{opacity:1}}
 footer{padding:40px 0 60px;color:var(--soft);font-size:13px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:700px){h1{margin:28px 0 14px}.sub{margin-bottom:26px}.bar{flex-direction:column;align-items:flex-start;gap:16px;padding:16px 0;margin-bottom:24px}.modes{flex-wrap:wrap}.modes button{padding:9px 16px}.sw{gap:10px;flex-wrap:wrap}.sw button{width:30px;height:30px}}
 </style>
 </head>
 <body>
@@ -72,12 +73,12 @@ sc.forEach(a=>{seen[a.artist_id]=(seen[a.artist_id]||0)+1;(seen[a.artist_id]<=2?
 return first.concat(rest)}
 function draw(){
 let l=A.filter(a=>!hue||(a.colours||[]).includes(hue));if(mode!=="foryou")A.forEach(a=>{a._why=""});if(mode==="shuffle")l=shuf(l);if(mode==="foryou")l=rank(l);
-wall.innerHTML=l.length?l.map(a=>`<figure tabindex="0"><a href="${imgUrl(a.image_path)}" target="_blank" rel="noopener"><img class="art" loading="lazy" src="${imgUrl(a.thumb_path||a.image_path)}" alt="${esc(a.title)}"></a><figcaption><b>${esc(a.title)}</b><a href="profile.html?id=${a.artist_id}">${esc(a.profiles&&a.profiles.display_name)}</a>${a._why?`<span>${esc(a._why)}</span>`:""}</figcaption></figure>`).join(""):`<p class="empty">${A.length?"No work in this colour yet.":'Nothing here yet. <a href="upload.html">Share the first piece.</a>'}</p>`}
+wall.innerHTML=l.length?l.map(a=>tile(a,true)).join(""):`<p class="empty">${A.length?"No work in this colour yet.":'Nothing here yet. <a href="upload.html">Share the first piece.</a>'}</p>`}
 $("modes").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=b.dataset.m;[...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b));draw()};
 const sw=$("sw");
 [["red","#D2503A"],["ochre","#E3A93C"],["green","#5E8C61"],["blue","#4A74B4"],["violet","#8068B8"],["ink","#2B2925"]].forEach(([n,c])=>{const b=document.createElement("button");b.style.background=c;b.title=n;b.setAttribute("aria-label",n);b.onclick=()=>{hue=hue===n?null:n;[...sw.querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b&&hue));draw()};sw.appendChild(b)});
 ready.then(async()=>{
-const r=await sb.from("artworks").select("id,title,image_path,thumb_path,colours,mediums,created_at,artist_id,profiles(display_name)").order("created_at",{ascending:false}).limit(200);
+const r=await sb.from("artworks").select("id,title,image_path,thumb_path,kind,body,colours,mediums,created_at,artist_id,profiles(display_name)").order("created_at",{ascending:false}).limit(200);
 A=r.data||[];
 if(me){
 const [p,f]=await Promise.all([sb.from("profiles").select("interests").eq("id",me.id).maybeSingle(),sb.from("follows").select("artist_id").eq("follower_id",me.id)]);
