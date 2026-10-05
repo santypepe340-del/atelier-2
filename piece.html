@@ -51,23 +51,23 @@ const id=new URLSearchParams(location.search).get("id");
 let W=null,own=false,saved=false;
 function setSv(){$("sv").textContent=saved?"Saved":"Save";$("sv").classList.toggle("on",saved)}
 async function loadC(){
-const r=await sb.from("comments").select("id,body,created_at,author_id,profiles(display_name,avatar_path)").eq("artwork_id",id).order("created_at");
+const r=await sb.from("comments").select("id,body,created_at,author_id,profiles(display_name,avatar_path,founding)").eq("artwork_id",id).order("created_at");
 const d=r.data||[];
 $("ch").textContent=d.length+(d.length===1?" comment":" comments");
 $("cl").innerHTML=d.length?d.map(x=>{const q=x.profiles||{},nm=q.display_name||"Artist";
 const av=q.avatar_path?`<img src="${imgUrl(q.avatar_path)}" alt="">`:`<span class="ini">${esc(nm.charAt(0).toUpperCase())}</span>`;
 const del=me&&(me.id===x.author_id||own)?`<button class="del" data-id="${x.id}">Delete</button>`:"";
-return `<div class="c"><a href="profile.html?id=${x.author_id}">${av}</a><div style="flex:1;min-width:0"><div class="h"><a href="profile.html?id=${x.author_id}">${esc(nm)}</a><span>${ago(x.created_at)}</span>${del}</div><p>${esc(x.body)}</p></div></div>`}).join(""):'<p class="msg">No comments yet.</p>'}
+return `<div class="c"><a href="profile.html?id=${x.author_id}">${av}</a><div style="flex:1;min-width:0"><div class="h"><a href="profile.html?id=${x.author_id}">${esc(nm)}</a>${badge(q.founding)}<span>${ago(x.created_at)}</span>${del}</div><p>${esc(x.body)}</p></div></div>`}).join(""):'<p class="msg">No comments yet.</p>'}
 ready.then(async()=>{
 if(!id){location.href="index.html";return}
-const r=await sb.from("artworks").select("*,profiles!artworks_artist_id_fkey(display_name),challenges(title)").eq("id",id).maybeSingle();
+const r=await sb.from("artworks").select("*,profiles!artworks_artist_id_fkey(display_name,founding),challenges(title)").eq("id",id).maybeSingle();
 W=r.data;
 if(!W){$("piece").innerHTML='<p class="msg">This piece could not be found.</p>';return}
 own=!!(me&&me.id===W.artist_id);
 document.title=W.title+" on Atelier";
 let h="";
 if(W.kind==="image")h+=`<img class="pic" src="${imgUrl(W.image_path)}" alt="${esc(W.title)}">`;
-h+=`<h1>${esc(W.title)}</h1><p class="by">by <a href="profile.html?id=${W.artist_id}">${esc(W.profiles&&W.profiles.display_name)}</a>, ${new Date(W.created_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})}</p>`;
+h+=`<h1>${esc(W.title)}</h1><p class="by">by <a href="profile.html?id=${W.artist_id}">${esc(W.profiles&&W.profiles.display_name)}</a>${badge(W.profiles&&W.profiles.founding)}, ${new Date(W.created_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})}</p>`;
 if(W.challenges)h+=`<p class="by">Challenge: <a href="challenges.html">${esc(W.challenges.title)}</a></p>`;
 if(W.kind==="writing")h+=`<div class="text">${esc(W.body)}</div>`;else if(W.note)h+=`<p class="about">${esc(W.note)}</p>`;
 $("piece").innerHTML=h;
