@@ -33,3 +33,31 @@ figcaption a:hover{color:var(--ink)}
 .ini{display:grid;place-items:center;background:var(--line);font-size:13px}
 figure>a{display:block}
 .auth svg{display:block}
+header{flex-wrap:wrap;gap:12px 20px}
+
+.wr{display:block;text-decoration:none;color:var(--ink);padding:18px;border:1px solid var(--line);border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,var(--paper));transition:transform .35s ease}
+.wr:hover{transform:translateY(-3px)}
+.wr b{display:block;font:400 22px/1.15 "Instrument Serif",Georgia,serif;margin-bottom:8px}
+.wr p{margin:0;color:var(--soft);font:400 17px/1.4 "Instrument Serif",Georgia,serif;white-space:pre-wrap;overflow-wrap:anywhere}
+.btn{display:inline-block;background:var(--ink);color:var(--paper);border:1px solid var(--ink);border-radius:99px;padding:9px 22px;text-decoration:none;font:inherit;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.mbtn{display:none;background:none;border:1px solid var(--line);border-radius:99px;padding:8px 18px;font:inherit;color:var(--ink);cursor:pointer}
+.msheet{display:none}
+.mclose{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:18px;background:none;border:1px solid var(--line);border-radius:99px;padding:8px 18px;font:inherit;color:var(--ink);cursor:pointer}
+@media(max-width:700px){
+.wrap{padding:0 18px}
+header{padding:14px 0;flex-wrap:nowrap}
+header .dnav,header .dauth,header .upload{display:none}
+.mbtn{display:inline-block}
+.right{gap:10px}
+.auth svg{width:22px;height:22px}
+.msheet:not([hidden]){display:flex;flex-direction:column;position:fixed;inset:0;z-index:50;background:var(--paper);padding:calc(env(safe-area-inset-top,0px) + 72px) 24px calc(env(safe-area-inset-bottom,0px) + 32px);overflow:auto}
+.msheet a{font:400 34px/1.15 "Instrument Serif",Georgia,serif;color:var(--ink);text-decoration:none;padding:14px 0;border-bottom:1px solid var(--line)}
+.msheet a.on{color:var(--accent)}
+.wall{column-gap:12px}
+figure{margin-bottom:18px}
+figcaption{font-size:15px}
+.btn,.chip,.ghost{min-height:42px}
+.chip{padding:8px 16px}
+}
