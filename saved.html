@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier: saved</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+h1{font:400 clamp(44px,9vw,76px)/1 "Instrument Serif",Georgia,serif;letter-spacing:-.03em;margin:clamp(24px,5vw,56px) 0 10px}
+.sub{color:var(--soft);margin:0 0 32px}
+figure{margin:0 0 20px;break-inside:avoid}
+.wall{columns:2;column-gap:14px;padding-bottom:80px}
+@media(min-width:720px){.wall{columns:3;column-gap:20px}}
+@media(min-width:1020px){.wall{columns:4}}
+.art{border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -18px rgba(0,0,0,.35)}
+figcaption{padding-top:8px;font:400 17px/1.2 "Instrument Serif",Georgia,serif}
+figcaption a{font:400 13px Figtree,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="site-header"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="site.js"></script>
+<h1>Saved</h1>
+<p class="sub">Work you want to come back to. Only you can see this.</p>
+<main class="wall" id="wall"></main>
+</div>
+<script>
+ready.then(async()=>{
+if(!me){location.href="auth.html";return}
+const r=await sb.from("saves").select("artwork_id,artworks(id,title,image_path,thumb_path,kind,body,artist_id,profiles!artworks_artist_id_fkey(display_name))").eq("user_id",me.id).order("created_at",{ascending:false});
+const d=(r.data||[]).filter(x=>x.artworks);
+document.getElementById("wall").innerHTML=d.length?d.map(x=>tile(x.artworks,true)).join(""):'<p class="empty">Nothing saved yet. Tap Save on any piece.</p>'});
+</script>
+</body>
+</html>
