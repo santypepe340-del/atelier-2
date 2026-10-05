@@ -53,7 +53,7 @@ const sel="id,title,image_path,thumb_path,kind,body,artist_id,profiles!artworks_
 const jobs=[
 sb.from("profiles").select("id,display_name,bio,avatar_path").ilike("display_name",like).limit(12),
 sb.from("artworks").select(sel).ilike("title",like).order("created_at",{ascending:false}).limit(24),
-sb.from("notes").select("id,body,author_id,profiles(display_name)").ilike("body",like).order("created_at",{ascending:false}).limit(10)];
+sb.from("notes").select("id,body,author_id,profiles!notes_author_id_fkey(display_name)").ilike("body",like).order("created_at",{ascending:false}).limit(10)];
 if(med)jobs.push(sb.from("artworks").select(sel).contains("mediums",[med]).order("created_at",{ascending:false}).limit(24));
 if(col)jobs.push(sb.from("artworks").select(sel).contains("colours",[col]).order("created_at",{ascending:false}).limit(24));
 const res=await Promise.all(jobs);
