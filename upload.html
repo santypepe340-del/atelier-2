@@ -28,6 +28,7 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .dots{display:flex;gap:8px;align-items:center;min-height:28px;margin-bottom:30px;color:var(--soft)}
 .dots i{width:22px;height:22px;border-radius:50%;border:1px solid var(--line)}
+select{width:100%;font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0 10px;margin-bottom:26px;border-radius:0}
 .pub{background:var(--ink);color:var(--paper);border:0;border-radius:99px;padding:12px 30px;font:inherit;cursor:pointer}
 .pub:disabled{opacity:.3;cursor:not-allowed}
 :is(button,a,.drop):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -35,6 +36,7 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 .done h2{font:400 clamp(34px,6vw,54px)/1.05 "Instrument Serif",Georgia,serif;margin:0 0 12px}
 .done p{color:var(--soft);max-width:26em;margin:0 0 24px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:700px){.drop{min-height:240px}.grid{gap:28px}}
 </style>
 </head>
 <body>
@@ -44,6 +46,7 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 <script src="config.js"></script>
 <script src="site.js"></script>
 <h1>Share your work</h1>
+<p style="color:var(--soft);margin:-18px 0 28px">Artwork, or <a href="write.html" style="color:var(--ink)">write something instead</a>.</p>
 
 <div class="grid">
 <div>
@@ -58,6 +61,8 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink)}
 <input type="text" id="title" placeholder="Untitled" autocomplete="off">
 <div class="lab">Medium</div>
 <div class="chips" id="chips"></div>
+<label for="chal">Enter a challenge (optional)</label>
+<select id="chal"><option value="">None</option></select>
 <label for="note">About this piece</label>
 <textarea id="note" placeholder="A line or two, if you like."></textarea>
 <div class="lab">Colours we found</div>
@@ -108,21 +113,41 @@ n[k]=(n[k]||0)+1}
 const top=Object.entries(n).sort((a,b)=>b[1]-a[1]).slice(0,3).map(a=>a[0]);window.found=top;
 $("dots").innerHTML=top.length?top.map(k=>`<i style="background:${SW[k]}" title="${k}"></i>`).join("")+`<span>${top.join(", ")}</span>`:"No strong colours found.";
 }catch(e){$("dots").textContent="Colours will be added when you publish."}}
+function shrink(file,max,q){return new Promise((res,rej)=>{
+const im=new Image(),u=URL.createObjectURL(file);
+im.onload=()=>{URL.revokeObjectURL(u);
+const s=Math.min(1,max/Math.max(im.width,im.height));
+const c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+c.toBlob(b=>{if(b&&b.type==="image/webp")return res(b);
+c.toBlob(j=>j?res(j):rej(new Error("Could not process the image")),"image/jpeg",q)},"image/webp",q)};
+im.onerror=()=>rej(new Error("Could not read the image"));
+im.src=u})}
 $("pub").onclick=async()=>{
 if(!me){location.href="auth.html";return}
 $("pub").disabled=true;$("pub").textContent="Publishing...";
 try{
-const ext=((file.name.split(".").pop()||"jpg")+"").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
-const path=me.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"."+ext;
-let r=await sb.storage.from("artworks").upload(path,file,{contentType:file.type});
+let full=file,thumb=file;
+if(file.type!=="image/gif"){full=await shrink(file,1600,.82);thumb=await shrink(file,600,.8)}
+const ext=b=>b.type==="image/webp"?"webp":b.type==="image/jpeg"?"jpg":((file.name.split(".").pop()||"jpg")+"").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+const base=me.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+const path=base+"."+ext(full);
+const tpath=thumb===full?null:base+"-t."+ext(thumb);
+const opt=b=>({contentType:b.type,cacheControl:"31536000"});
+let r=await sb.storage.from("artworks").upload(path,full,opt(full));
 if(r.error)throw r.error;
+if(tpath){r=await sb.storage.from("artworks").upload(tpath,thumb,opt(thumb));if(r.error)throw r.error}
 const mediums=[...document.querySelectorAll(".chip.on")].map(c=>c.textContent);
-r=await sb.from("artworks").insert({artist_id:me.id,title:$("title").value.trim(),note:$("note").value.trim()||null,mediums:mediums,colours:window.found||[],image_path:path});
+r=await sb.from("artworks").insert({artist_id:me.id,title:$("title").value.trim(),note:$("note").value.trim()||null,mediums:mediums,colours:window.found||[],image_path:path,thumb_path:tpath,challenge_id:$("chal").value||null});
 if(r.error)throw r.error;
 $("form").style.display="none";$("done").style.display="block";$("pub").textContent="Publish";
 }catch(e){alert("Could not publish: "+(e.message||e));$("pub").disabled=false;$("pub").textContent="Publish"}
 };
-ready.then(()=>{if(!me)location.href="auth.html"});
+ready.then(async()=>{if(!me){location.href="auth.html";return}
+const d=new Date().toISOString().slice(0,10);
+const r=await sb.from("challenges").select("id,title").lte("starts_on",d).gte("ends_on",d);
+(r.data||[]).forEach(c=>$("chal").insertAdjacentHTML("beforeend",`<option value="${c.id}">${esc(c.title)}</option>`));
+const p=new URLSearchParams(location.search).get("challenge");if(p)$("chal").value=p});
 $("again").onclick=()=>{$("done").style.display="none";$("form").style.display="block";$("form").reset();document.querySelectorAll(".chip.on").forEach(c=>c.classList.remove("on"));$("frame").style.display="none";$("drop").style.display="grid";$("dots").textContent="Add an image to see them.";has=false;ready()};
 </script>
 </body>
