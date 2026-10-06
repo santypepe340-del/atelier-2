@@ -13,15 +13,15 @@ if(a.kind==="writing"){var b=a.body||"";return '<figure><a class="wr" href="'+li
 return '<figure tabindex="0"><a href="'+link+'"><img class="art" loading="lazy" src="'+imgUrl(a.thumb_path||a.image_path)+'" alt="'+esc(a.title)+'"></a><figcaption><b>'+esc(a.title)+'</b>'+who+why+'</figcaption></figure>'};
 window.ready=sb.auth.getSession().then(function(r){
 window.me=r.data.session?r.data.session.user:null;
-var links=[["index.html","Discover"],["notes.html","Notes"],["challenges.html","Challenges"]];
+var links=[["index.html","Home"],["challenges.html","Challenges"]];
 if(me){links.push(["saved.html","Saved"]);links.push(["profile.html","My profile"])}
 function item(l){var on=p===l[0]&&(l[0]!=="profile.html"||!location.search);return '<a href="'+l[0]+'"'+(on?' class="on"':'')+'>'+l[1]+'</a>'}
 var nav=links.map(item).join("");
 var authD=me?'<a class="auth dauth" href="#" id="out">Sign out</a>':'<a class="auth dauth" href="auth.html">Sign in</a>';
 var authM=me?'<a href="#" id="out2">Sign out</a>':'<a href="auth.html">Sign in</a>';
 var SRCH='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
-var sheet='<div class="msheet" id="msheet" hidden><button class="mclose" id="mclose">Close</button>'+links.map(item).join("")+'<a href="upload.html">Share artwork</a><a href="write.html">Write something</a>'+authM+'</div>';
-document.getElementById("site-header").outerHTML='<header><a class="mark" href="index.html">Atelier</a><nav class="dnav">'+nav+'</nav><span class="right"><a class="auth" href="search.html" aria-label="Search">'+SRCH+'</a>'+authD+'<a class="upload" href="upload.html">Share work</a><button class="mbtn" id="mbtn" aria-expanded="false">Menu</button></span></header>'+sheet;
+var sheet='<div class="msheet" id="msheet" hidden><button class="mclose" id="mclose">Close</button>'+links.map(item).join("")+'<a href="upload.html">Add artwork to portfolio</a><a href="write.html">Add writing to portfolio</a>'+authM+'</div>';
+document.getElementById("site-header").outerHTML='<header><a class="mark" href="index.html">Atelier</a><nav class="dnav">'+nav+'</nav><span class="right"><a class="auth" href="search.html" aria-label="Search">'+SRCH+'</a>'+authD+'<a class="upload" href="upload.html">Add to portfolio</a><button class="mbtn" id="mbtn" aria-expanded="false">Menu</button></span></header>'+sheet;
 function so(){sb.auth.signOut().then(function(){location.href="index.html"})}
 ["out","out2"].forEach(function(i){var o=document.getElementById(i);if(o)o.onclick=function(e){e.preventDefault();so()}});
 var sh=document.getElementById("msheet"),mb=document.getElementById("mbtn");
